@@ -53,14 +53,15 @@ export default function NikooHomesLanding() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [showModal, setShowModal] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   const galleryImages = [
-    { src: '/api/placeholder/800/600', alt: 'Aerial View', title: 'Aerial View' },
-    { src: '/api/placeholder/800/600', alt: 'Living Room', title: 'Living Room' },
-    { src: '/api/placeholder/800/600', alt: 'Kitchen', title: 'Modern Kitchen' },
-    { src: '/api/placeholder/800/600', alt: 'Bedroom', title: 'Master Bedroom' },
-    { src: '/api/placeholder/800/600', alt: 'Clubhouse', title: 'Clubhouse' },
-    { src: '/api/placeholder/800/600', alt: 'Pool', title: 'Swimming Pool' }
+    { src: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80', alt: 'Aerial View', title: 'Aerial View' },
+    { src: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80', alt: 'Living Room', title: 'Living Room' },
+    { src: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80', alt: 'Kitchen', title: 'Modern Kitchen' },
+    { src: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80', alt: 'Bedroom', title: 'Master Bedroom' },
+    { src: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=800&q=80', alt: 'Clubhouse', title: 'Clubhouse' },
+    { src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', alt: 'Pool', title: 'Swimming Pool' }
   ];
 
   const nextImage = () => {
@@ -149,8 +150,9 @@ export default function NikooHomesLanding() {
           </motion.div>
         </div>
       )}
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background with overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-purple-900/80 z-10"></div>
         <div 
