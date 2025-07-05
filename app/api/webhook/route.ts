@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Your Google Apps Script URL
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYByg-qtYPwePDvCbQ89BnznUT09gXaP1WQjwd9mT8KIWCHnjW6WezpDJNMu7Q0P4g0w/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOsEsiYayGfne0E4Fs5nOncNFvHi2yy9jeZHl-KIFjT0Mk6u9SFp7WOEe08_7oqXWfEw/exec';
 
     // Forward the data to Google Sheets
     const response = await fetch(GOOGLE_SCRIPT_URL, {
