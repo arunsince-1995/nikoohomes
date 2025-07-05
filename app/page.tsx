@@ -55,6 +55,9 @@ export default function NikooHomesLanding() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'download' | 'explore' | 'sitevisit' | 'whatsapp'>('download');
+  const [showThankYou, setShowThankYou] = useState(false);
+  const [thankYouMessage, setThankYouMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const [navOpen, setNavOpen] = useState(false);
 
@@ -83,6 +86,7 @@ export default function NikooHomesLanding() {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
       const formDataToSubmit: FormData = {
@@ -96,7 +100,15 @@ export default function NikooHomesLanding() {
       const result = await submitToGoogleSheets(formDataToSubmit);
 
       if (result.success) {
-        alert('Thank you! Your request has been submitted successfully.');
+        // Show thank you popup instead of alert
+        const messages = {
+          download: 'Thank you! Your brochure download request has been submitted successfully. We\'ll send you the brochure shortly.',
+          explore: 'Thank you! Your project exploration request has been submitted successfully. Our team will contact you soon.',
+          sitevisit: 'Thank you! Your site visit request has been submitted successfully. We\'ll schedule your visit and contact you shortly.',
+          whatsapp: 'Thank you! Your location request has been submitted successfully. We\'ll send you the location details on WhatsApp.',
+        };
+        setThankYouMessage(messages[modalType] || 'Thank you! Your request has been submitted successfully.');
+        setShowThankYou(true);
         setShowModal(false);
         setFormData({ name: '', email: '', phone: '' });
       } else {
@@ -105,6 +117,8 @@ export default function NikooHomesLanding() {
     } catch (error) {
       console.error('Form submission error:', error);
       alert('An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -231,9 +245,24 @@ export default function NikooHomesLanding() {
                   />
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black py-3 rounded-lg font-bold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black py-3 rounded-lg font-bold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    Download Now
+                    {isSubmitting ? (
+                      <>
+                        <div
+                          className="inline-block h-4 w-4 animate-[spinner-grow_0.75s_linear_infinite] rounded-full bg-current align-[-0.125em] opacity-0 motion-reduce:animate-[spinner-grow_1.5s_linear_infinite] mr-2"
+                          role="status"
+                        >
+                          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                            Loading...
+                          </span>
+                        </div>
+                        Submitting...
+                      </>
+                    ) : (
+                      'Download Now'
+                    )}
                   </button>
                 </form>
               </>
@@ -271,9 +300,24 @@ export default function NikooHomesLanding() {
                   />
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    Submit Now
+                    {isSubmitting ? (
+                      <>
+                        <div
+                          className="inline-block h-4 w-4 animate-[spinner-grow_0.75s_linear_infinite] rounded-full bg-current align-[-0.125em] opacity-0 motion-reduce:animate-[spinner-grow_1.5s_linear_infinite] mr-2"
+                          role="status"
+                        >
+                          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                            Loading...
+                          </span>
+                        </div>
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Now'
+                    )}
                   </button>
                 </form>
               </>
@@ -311,9 +355,24 @@ export default function NikooHomesLanding() {
                   />
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-blue-700 transition-all duration-300"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    Schedule Now
+                    {isSubmitting ? (
+                      <>
+                        <div
+                          className="inline-block h-4 w-4 animate-[spinner-grow_0.75s_linear_infinite] rounded-full bg-current align-[-0.125em] opacity-0 motion-reduce:animate-[spinner-grow_1.5s_linear_infinite] mr-2"
+                          role="status"
+                        >
+                          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                            Loading...
+                          </span>
+                        </div>
+                        Submitting...
+                      </>
+                    ) : (
+                      'Schedule Now'
+                    )}
                   </button>
                 </form>
               </>
@@ -342,13 +401,55 @@ export default function NikooHomesLanding() {
                   />
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-blue-700 transition-all duration-300"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    Get Location
+                    {isSubmitting ? (
+                      <>
+                        <div
+                          className="inline-block h-4 w-4 animate-[spinner-grow_0.75s_linear_infinite] rounded-full bg-current align-[-0.125em] opacity-0 motion-reduce:animate-[spinner-grow_1.5s_linear_infinite] mr-2"
+                          role="status"
+                        >
+                          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                            Loading...
+                          </span>
+                        </div>
+                        Submitting...
+                      </>
+                    ) : (
+                      'Get Location'
+                    )}
                   </button>
                 </form>
               </>
             )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Thank You Popup */}
+      {showThankYou && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md md:max-w-lg relative text-center"
+          >
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Success!</h2>
+              <p className="text-gray-600 leading-relaxed">{thankYouMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowThankYou(false)}
+              className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105"
+            >
+              Close
+            </button>
           </motion.div>
         </div>
       )}
@@ -437,7 +538,12 @@ export default function NikooHomesLanding() {
         ref={enqRef}
         className={`w-full flex justify-center py-8 transition-all duration-700 ${enqVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
-        <EnquiryForm />
+        <EnquiryForm 
+          onSuccess={(message: string) => {
+            setThankYouMessage(message);
+            setShowThankYou(true);
+          }}
+        />
       </div>
 
       {/* Project Overview */}
@@ -848,9 +954,9 @@ export default function NikooHomesLanding() {
 }
 
 // EnquiryForm component
-function EnquiryForm() {
+function EnquiryForm({ onSuccess }: { onSuccess: (message: string) => void }) {
   const [enqData, setEnqData] = useState({ name: '', email: '', phone: '' });
-  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEnqData({ ...enqData, [e.target.name]: e.target.value });
@@ -858,7 +964,7 @@ function EnquiryForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
     
     try {
       const formDataToSubmit: FormData = {
@@ -872,7 +978,8 @@ function EnquiryForm() {
       const result = await submitToGoogleSheets(formDataToSubmit);
 
       if (result.success) {
-        alert('Thank you! Your enquiry has been submitted successfully.');
+        // Show thank you popup for enquiry form
+        onSuccess('Thank you! Your enquiry has been submitted successfully. Our team will contact you soon.');
         setEnqData({ name: '', email: '', phone: '' });
       } else {
         alert('Error: ' + result.message);
@@ -881,7 +988,7 @@ function EnquiryForm() {
       console.error('Form submission error:', error);
       alert('An error occurred. Please try again.');
     } finally {
-      setTimeout(() => setSubmitted(false), 2000);
+      setIsSubmitting(false);
     }
   };
 
@@ -920,10 +1027,24 @@ function EnquiryForm() {
       />
       <button
         type="submit"
-        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 w-full md:w-auto shadow-md hover:shadow-lg"
-        disabled={submitted}
+        disabled={isSubmitting}
+        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 w-full md:w-auto shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
       >
-        {submitted ? 'Enquiry Sent!' : 'Enquire Now'}
+        {isSubmitting ? (
+          <>
+            <div
+              className="inline-block h-4 w-4 animate-[spinner-grow_0.75s_linear_infinite] rounded-full bg-current align-[-0.125em] opacity-0 motion-reduce:animate-[spinner-grow_1.5s_linear_infinite] mr-2"
+              role="status"
+            >
+              <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                Loading...
+              </span>
+            </div>
+            Submitting...
+          </>
+        ) : (
+          'Enquire Now'
+        )}
       </button>
     </form>
   );
