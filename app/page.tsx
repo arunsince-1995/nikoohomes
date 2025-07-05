@@ -24,6 +24,7 @@ import { FeatureSteps } from "@/components/ui/feature-section";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { submitToGoogleSheets, submitToConsole, FormData } from "@/lib/form-handler";
 
 // Animation hook for fade-in/slide-up on scroll
 function useScrollFadeIn() {
@@ -53,7 +54,15 @@ export default function NikooHomesLanding() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<'download' | 'explore' | 'sitevisit' | 'whatsapp'>('download');
   const heroRef = useRef<HTMLDivElement>(null);
+  const [navOpen, setNavOpen] = useState(false);
+
+  // Add a single handler for all CTA buttons
+  const handleShowModal = (type: 'download' | 'explore' | 'sitevisit' | 'whatsapp') => {
+    setModalType(type);
+    setShowModal(true);
+  };
 
   const galleryImages = [
     { src: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80', alt: 'Aerial View', title: 'Aerial View' },
@@ -72,11 +81,31 @@ export default function NikooHomesLanding() {
     setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Here you could trigger the download after validation
-    setShowModal(false);
-    // Optionally, trigger download logic here
+    
+    try {
+      const formDataToSubmit: FormData = {
+        formType: modalType,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+      };
+
+      // Always use Google Sheets for form submissions
+      const result = await submitToGoogleSheets(formDataToSubmit);
+
+      if (result.success) {
+        alert('Thank you! Your request has been submitted successfully.');
+        setShowModal(false);
+        setFormData({ name: '', email: '', phone: '' });
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      alert('An error occurred. Please try again.');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,8 +121,66 @@ export default function NikooHomesLanding() {
   const [consultRef, consultVisible] = useScrollFadeIn();
   const [faqRef, faqVisible] = useScrollFadeIn();
 
+  // Enable smooth scroll behavior globally
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.documentElement.style.scrollBehavior = "smooth";
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        document.documentElement.style.scrollBehavior = "auto";
+      }
+    };
+  }, []);
+
+  // Section anchor IDs for navigation
+  const sectionLinks = [
+    { id: 'hero', label: 'Home' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'pricing', label: 'Pricing' },
+    { id: 'amenities', label: 'Amenities' },
+    { id: 'gallery', label: 'Gallery' },
+    { id: 'location', label: 'Location' },
+    { id: 'consult', label: 'Consultation' },
+    { id: 'faq', label: 'FAQ' },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Static Top Navbar */}
+      <nav className={
+        `fixed top-0 left-0 right-0 z-50 mx-auto max-w-5xl mt-2 px-2 ` +
+        `sm:bg-white/90 sm:backdrop-blur sm:border-b sm:border-gray-200 sm:shadow-sm sm:rounded-full ` +
+        `${navOpen ? '' : 'bg-transparent border-none shadow-none'}`
+      }>
+        <div className="flex justify-between items-center px-2 py-1">
+          <div className="flex-1 flex justify-center items-center whitespace-nowrap gap-1 max-sm:hidden">
+            {sectionLinks.map(({ id, label }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="px-3 py-1 mx-[5px] rounded-full font-medium transition-colors duration-200 text-sm sm:text-base bg-transparent text-gray-700 hover:bg-blue-100"
+                style={{ scrollBehavior: 'smooth' }}
+                onClick={() => setNavOpen(false)}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+          {/* Hamburger for mobile, right side, no dropdown */}
+          <div className="flex-1 flex justify-end sm:hidden">
+            <button
+              className="flex items-center justify-center p-2 focus:outline-none"
+              aria-label="Open menu"
+              onClick={() => setNavOpen(true)}
+            >
+              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-gray-700">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
       {/* Modal Popup for Brochure Download */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -111,54 +198,169 @@ export default function NikooHomesLanding() {
             >
               ×
             </button>
-            <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Download Brochure</h2>
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone Number"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black py-3 rounded-lg font-bold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300"
-              >
-                Download Now
-              </button>
-            </form>
+            {modalType === 'download' && (
+              <>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Download Brochure</h2>
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Your Email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black py-3 rounded-lg font-bold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300"
+                  >
+                    Download Now
+                  </button>
+                </form>
+              </>
+            )}
+            {modalType === 'explore' && (
+              <>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Explore Project Details</h2>
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Your Email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+                  >
+                    Submit Now
+                  </button>
+                </form>
+              </>
+            )}
+            {modalType === 'sitevisit' && (
+              <>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Book a Site Visit</h2>
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Your Email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-blue-700 transition-all duration-300"
+                  >
+                    Schedule Now
+                  </button>
+                </form>
+              </>
+            )}
+            {modalType === 'whatsapp' && (
+              <>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Get Location on WhatsApp</h2>
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="WhatsApp Number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-blue-700 transition-all duration-300"
+                  >
+                    Get Location
+                  </button>
+                </form>
+              </>
+            )}
           </motion.div>
         </div>
       )}
 
       {/* Hero Section */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section id="hero" ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background with overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-purple-900/80 z-10"></div>
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/api/placeholder/1920/1080')"
+            backgroundImage: "url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80')"
           }}
         ></div>
         
@@ -195,7 +397,7 @@ export default function NikooHomesLanding() {
 
               <button
                 className="group bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-4 rounded-full font-bold text-lg hover:from-yellow-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-2xl"
-                onClick={() => setShowModal(true)}
+                onClick={() => handleShowModal('download')}
               >
                 <Download className="w-5 h-5 inline mr-2 group-hover:animate-bounce" />
                 Download Brochure
@@ -239,10 +441,7 @@ export default function NikooHomesLanding() {
       </div>
 
       {/* Project Overview */}
-      <section
-        ref={overviewRef}
-        className={`py-20 bg-white transition-all duration-700 ${overviewVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      >
+      <section id="overview" ref={overviewRef} className={`py-20 bg-white transition-all duration-700 ${overviewVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">Project Overview</h2>
@@ -267,7 +466,9 @@ export default function NikooHomesLanding() {
           </div>
 
           <div className="text-center">
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
+            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              onClick={() => handleShowModal('explore')}
+            >
               Explore Project Details
               <ArrowRight className="w-5 h-5 inline ml-2" />
             </button>
@@ -276,10 +477,7 @@ export default function NikooHomesLanding() {
       </section>
 
       {/* Pricing & Floor Plans */}
-      <section
-        ref={pricingRef}
-        className={`py-20 bg-gradient-to-br from-gray-50 to-blue-50 transition-all duration-700 ${pricingVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      >
+      <section id="pricing" ref={pricingRef} className={`py-20 bg-gradient-to-br from-gray-50 to-blue-50 transition-all duration-700 ${pricingVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">Pricing & Floor Plans</h2>
@@ -324,7 +522,9 @@ export default function NikooHomesLanding() {
                   <Home className="w-16 h-16 text-blue-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-4">{plan} Floor Plan</h3>
-                <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
+                <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+                  onClick={() => handleShowModal('download')}
+                >
                   <Download className="w-4 h-4 inline mr-2" />
                   Download Plan
                 </button>
@@ -333,7 +533,9 @@ export default function NikooHomesLanding() {
           </div>
 
           <div className="text-center">
-            <button className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
+            <button className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              onClick={() => handleShowModal('sitevisit')}
+            >
               <Calendar className="w-5 h-5 inline mr-2" />
               Book a Site Visit Now
             </button>
@@ -342,7 +544,7 @@ export default function NikooHomesLanding() {
       </section>
 
       {/* Amenities */}
-      <div className="py-20">
+      <div id="amenities" className="py-20">
         <StickyScroll
           content={[
             {
@@ -434,10 +636,7 @@ export default function NikooHomesLanding() {
       </div>
 
       {/* Project Gallery */}
-      <section
-        ref={galleryRef}
-        className={`py-20 bg-gradient-to-br from-gray-900 to-blue-900 transition-all duration-700 ${galleryVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      >
+      <section id="gallery" ref={galleryRef} className={`py-20 bg-gradient-to-br from-gray-900 to-blue-900 transition-all duration-700 ${galleryVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">Project Gallery</h2>
@@ -486,7 +685,10 @@ export default function NikooHomesLanding() {
           </div>
 
           <div className="text-center mt-12">
-            <button className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-4 rounded-full font-bold text-lg hover:from-yellow-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg">
+            <button
+              className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-4 rounded-full font-bold text-lg hover:from-yellow-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              onClick={() => handleShowModal('download')}
+            >
               <Download className="w-5 h-5 inline mr-2" />
               Download Image Pack
             </button>
@@ -495,10 +697,7 @@ export default function NikooHomesLanding() {
       </section>
 
       {/* Location & Map */}
-      <section
-        ref={locationRef}
-        className={`py-20 bg-white transition-all duration-700 ${locationVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      >
+      <section id="location" ref={locationRef} className={`py-20 bg-white transition-all duration-700 ${locationVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">Prime Location</h2>
@@ -536,7 +735,9 @@ export default function NikooHomesLanding() {
           </div>
 
           <div className="text-center mt-12">
-            <button className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
+            <button className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              onClick={() => handleShowModal('whatsapp')}
+            >
               <MessageCircle className="w-5 h-5 inline mr-2" />
               Get Location on WhatsApp
             </button>
@@ -545,10 +746,7 @@ export default function NikooHomesLanding() {
       </section>
 
       {/* Free Consultation */}
-      <section
-        ref={consultRef}
-        className={`py-20 bg-gradient-to-br from-blue-900 to-purple-900 transition-all duration-700 ${consultVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      >
+      <section id="consult" ref={consultRef} className={`py-20 bg-gradient-to-br from-blue-900 to-purple-900 transition-all duration-700 ${consultVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">Free Expert Consultation</h2>
           <p className="text-xl text-blue-200 mb-12 max-w-2xl mx-auto">
@@ -556,11 +754,15 @@ export default function NikooHomesLanding() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <button className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
+            <button className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              onClick={() => handleShowModal('sitevisit')}
+            >
               <MessageCircle className="w-5 h-5 inline mr-2" />
               Talk to Expert Now
             </button>
-            <button className="bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transition-all duration-300 border border-white/30">
+            <button className="bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transition-all duration-300 border border-white/30"
+              onClick={() => handleShowModal('sitevisit')}
+            >
               <Phone className="w-5 h-5 inline mr-2" />
               Call Now
             </button>
@@ -569,10 +771,7 @@ export default function NikooHomesLanding() {
       </section>
 
       {/* FAQ Section */}
-      <section
-        ref={faqRef}
-        className={`py-20 bg-gray-50 transition-all duration-700 ${faqVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      >
+      <section id="faq" ref={faqRef} className={`py-20 bg-gray-50 transition-all duration-700 ${faqVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">Frequently Asked Questions</h2>
@@ -620,6 +819,30 @@ export default function NikooHomesLanding() {
           <p className="text-gray-500 mt-8 text-sm">© 2025 Bhartiya Urban. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Mobile menu overlay */}
+      {navOpen && (
+        <div className="fixed inset-0 z-[100] bg-white/95 flex flex-col items-center justify-center sm:hidden animate-fade-in">
+          <button
+            className="absolute top-6 right-6 text-3xl text-gray-700"
+            aria-label="Close menu"
+            onClick={() => setNavOpen(false)}
+          >
+            ×
+          </button>
+          {sectionLinks.map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="block w-full text-center px-6 py-4 text-2xl font-bold text-gray-700 hover:bg-gray-100 rounded-xl mb-2"
+              style={{ scrollBehavior: 'smooth' }}
+              onClick={() => setNavOpen(false)}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -633,11 +856,33 @@ function EnquiryForm() {
     setEnqData({ ...enqData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitted(true);
-    // Handle actual enquiry logic here
-    setTimeout(() => setSubmitted(false), 2000);
+    
+    try {
+      const formDataToSubmit: FormData = {
+        formType: 'enquiry',
+        name: enqData.name,
+        email: enqData.email,
+        phone: enqData.phone,
+      };
+
+      // Always use Google Sheets for form submissions
+      const result = await submitToGoogleSheets(formDataToSubmit);
+
+      if (result.success) {
+        alert('Thank you! Your enquiry has been submitted successfully.');
+        setEnqData({ name: '', email: '', phone: '' });
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setTimeout(() => setSubmitted(false), 2000);
+    }
   };
 
   return (
