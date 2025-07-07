@@ -1,5 +1,5 @@
 const nextConfig = {
-  output: 'export',
+  // output: 'export', // REMOVED to enable API routes
   trailingSlash: true,
   eslint: {
     ignoreDuringBuilds: true,

@@ -1,15 +1,16 @@
 export interface FormData {
-  formType: 'download' | 'explore' | 'sitevisit' | 'whatsapp' | 'enquiry';
-  name: string;
-  email?: string;
+  event: string;
+  fullName: string;
   phone: string;
-  additionalNotes?: string;
+  email: string;
+  numSpots: string;
 }
+
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7cJeg0tKK7YLBOb5c-CGOPX6BFsIGK8MLV1LwyetB-Nnl6-IMJN6SX4QPHTso8FK-/exec';
 
 export async function submitToGoogleSheets(data: FormData): Promise<{ success: boolean; message: string }> {
   try {
-    // Send data to Vercel API route which proxies to Google Script
-    const response = await fetch('/api/submit-form', {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -17,17 +18,16 @@ export async function submitToGoogleSheets(data: FormData): Promise<{ success: b
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const text = await response.text();
+    if (text.trim().toLowerCase().includes('success')) {
+      return { success: true, message: 'Form submitted and saved to Google Sheet.' };
+    } else {
+      return { success: false, message: text };
     }
-
-    const result = await response.json();
-    return result;
   } catch (error) {
-    console.error('Error submitting form:', error);
     return {
       success: false,
-      message: 'Failed to submit form. Please try again.',
+      message: 'Failed to submit form: ' + error,
     };
   }
 }
