@@ -1,75 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOsEsiYayGfne0E4Fs5nOncNFvHi2yy9jeZHl-KIFjT0Mk6u9SFp7WOEe08_7oqXWfEw/exec';
 
-export async function POST(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Set CORS headers for all responses
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ success: false, message: 'Method Not Allowed' });
+    return;
+  }
+
   try {
-    const data = await request.json();
-    
-    // Validate required fields
-    if (!data.name || !data.phone || !data.formType) {
-      return NextResponse.json(
-        { success: false, message: 'Missing required fields' },
-        { status: 400 }
-      );
+    const data = req.body;
+    if (!data || !data.name || !data.phone || !data.formType) {
+      res.status(400).json({ success: false, message: 'Missing required fields' });
+      return;
     }
 
-    console.log('Sending JSON data to Google Script:', data);
-    
-    // Send data to Google Apps Script as JSON
+    // Forward to Google Apps Script
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
-    console.log('Google Script response status:', response.status);
-    console.log('Google Script response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Script error response:', errorText);
-      throw new Error(`Google Script error: ${response.status} - ${errorText}`);
-    }
-
     const result = await response.json();
-    console.log('Google Script result:', result);
-    
-    // Check if Google Script actually succeeded
-    if (!result.success) {
-      throw new Error(`Google Script failed: ${result.message || 'Unknown error'}`);
+    if (!response.ok || !result.success) {
+      res.status(500).json({ success: false, message: result.message || 'Google Script error' });
+      return;
     }
-    
-    return NextResponse.json({
+
+    res.status(200).json({
       success: true,
       message: 'Form submitted successfully',
-      timestamp: new Date().toISOString(),
-      googleScriptResult: result
+      googleScriptResult: result,
     });
-
-  } catch (error) {
-    console.error('Error submitting form:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to submit form. Please try again.' 
-      },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Failed to submit form', error: error.toString() });
   }
-}
-
-// Handle OPTIONS requests for CORS preflight
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 } 

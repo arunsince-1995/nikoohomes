@@ -1,5 +1,3 @@
-// Form submission handler for Google Sheets integration
-
 export interface FormData {
   formType: 'download' | 'explore' | 'sitevisit' | 'whatsapp' | 'enquiry';
   name: string;
@@ -10,10 +8,8 @@ export interface FormData {
 
 export async function submitToGoogleSheets(data: FormData): Promise<{ success: boolean; message: string }> {
   try {
-    // Always use Google Apps Script directly (works on Firebase Hosting)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOsEsiYayGfne0E4Fs5nOncNFvHi2yy9jeZHl-KIFjT0Mk6u9SFp7WOEe08_7oqXWfEw/exec';
-    
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
+    // Send data to Firebase Function which proxies to Google Script
+    const response = await fetch('https://<YOUR_PROJECT_ID>.cloudfunctions.net/submitForm', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,16 +31,3 @@ export async function submitToGoogleSheets(data: FormData): Promise<{ success: b
     };
   }
 }
-
-// Fallback function for development/testing
-export async function submitToConsole(data: FormData): Promise<{ success: boolean; message: string }> {
-  console.log('Form submission (development mode):', data);
-  
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return {
-    success: true,
-    message: 'Form submitted successfully (development mode)',
-  };
-} 
