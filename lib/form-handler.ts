@@ -10,12 +10,10 @@ export interface FormData {
 
 export async function submitToGoogleSheets(data: FormData): Promise<{ success: boolean; message: string }> {
   try {
-    // Use the Vercel API route for both development and production
-    const API_URL = '/api/submit-form';
+    // Always use Google Apps Script directly (works on Firebase Hosting)
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOsEsiYayGfne0E4Fs5nOncNFvHi2yy9jeZHl-KIFjT0Mk6u9SFp7WOEe08_7oqXWfEw/exec';
     
-    console.log('Submitting form data:', data);
-    
-    const response = await fetch(API_URL, {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -23,17 +21,11 @@ export async function submitToGoogleSheets(data: FormData): Promise<{ success: b
       body: JSON.stringify(data),
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Response error:', errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('Form submission result:', result);
     return result;
   } catch (error) {
     console.error('Error submitting form:', error);
