@@ -1,31 +1,16 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOsEsiYayGfne0E4Fs5nOncNFvHi2yy9jeZHl-KIFjT0Mk6u9SFp7WOEe08_7oqXWfEw/exec';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Set CORS headers for all responses
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    res.status(405).json({ success: false, message: 'Method Not Allowed' });
-    return;
-  }
-
+export async function POST(request: Request) {
   try {
-    const data = req.body;
-    if (!data || !data.name || !data.phone || !data.formType) {
-      res.status(400).json({ success: false, message: 'Missing required fields' });
-      return;
+    const data = await request.json();
+
+    if (!data.name || !data.phone || !data.formType) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Missing required fields' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
     }
 
-    // Forward to Google Apps Script
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,17 +18,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const result = await response.json();
+
     if (!response.ok || !result.success) {
-      res.status(500).json({ success: false, message: result.message || 'Google Script error' });
-      return;
+      return new Response(
+        JSON.stringify({ success: false, message: result.message || 'Google Script error' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'Form submitted successfully',
-      googleScriptResult: result,
-    });
+    return new Response(
+      JSON.stringify({ success: true, message: 'Form submitted successfully', googleScriptResult: result }),
+      { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+    );
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Failed to submit form', error: error.toString() });
+    return new Response(
+      JSON.stringify({ success: false, message: 'Failed to submit form', error: error.toString() }),
+      { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+    );
   }
 } 
