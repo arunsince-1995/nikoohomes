@@ -14,33 +14,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert data to URL-encoded format for Google Apps Script
-    const formData = new URLSearchParams();
-    formData.append('formType', data.formType);
-    formData.append('name', data.name);
-    if (data.email) formData.append('email', data.email);
-    formData.append('phone', data.phone);
-    if (data.additionalNotes) formData.append('additionalNotes', data.additionalNotes);
-
-    // Send data to Google Apps Script
+    console.log('Sending JSON data to Google Script:', data);
+    
+    // Send data to Google Apps Script as JSON
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: formData.toString(),
+      body: JSON.stringify(data),
     });
 
+    console.log('Google Script response status:', response.status);
+    console.log('Google Script response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`Google Script error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Google Script error response:', errorText);
+      throw new Error(`Google Script error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('Google Script result:', result);
+    
+    // Check if Google Script actually succeeded
+    if (!result.success) {
+      throw new Error(`Google Script failed: ${result.message || 'Unknown error'}`);
+    }
     
     return NextResponse.json({
       success: true,
       message: 'Form submitted successfully',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      googleScriptResult: result
     });
 
   } catch (error) {

@@ -13,6 +13,8 @@ export async function submitToGoogleSheets(data: FormData): Promise<{ success: b
     // Use the Vercel API route for both development and production
     const API_URL = '/api/submit-form';
     
+    console.log('Submitting form data:', data);
+    
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -21,11 +23,17 @@ export async function submitToGoogleSheets(data: FormData): Promise<{ success: b
       body: JSON.stringify(data),
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Response error:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('Form submission result:', result);
     return result;
   } catch (error) {
     console.error('Error submitting form:', error);
