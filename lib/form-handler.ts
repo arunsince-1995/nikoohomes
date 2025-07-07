@@ -8,8 +8,8 @@ export interface FormData {
 
 export async function submitToGoogleSheets(data: FormData): Promise<{ success: boolean; message: string }> {
   try {
-    // Send data to Firebase Function which proxies to Google Script
-    const response = await fetch('https://<YOUR_PROJECT_ID>.cloudfunctions.net/submitForm', {
+    // Send data to Vercel API route which proxies to Google Script
+    const response = await fetch('/api/submit-form', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
