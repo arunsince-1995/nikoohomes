@@ -6,7 +6,7 @@ export interface FormData {
   numSpots: string;
 }
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7cJeg0tKK7YLBOb5c-CGOPX6BFsIGK8MLV1LwyetB-Nnl6-IMJN6SX4QPHTso8FK-/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZ7_zNce1Vw1ctnJI2DikbWU-oPvFxlzrYhrTFpf9pEtdMZxw3opoO_vp61ByOytdu/exec';
 
 export async function submitToGoogleSheets(data: FormData): Promise<{ success: boolean; message: string }> {
   try {
