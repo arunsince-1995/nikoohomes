@@ -6,11 +6,11 @@ export interface FormData {
   numSpots: string;
 }
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZ7_zNce1Vw1ctnJI2DikbWU-oPvFxlzrYhrTFpf9pEtdMZxw3opoO_vp61ByOytdu/exec';
+const PROXY_API_URL = '/api/proxy';
 
 export async function submitToGoogleSheets(data: FormData): Promise<{ success: boolean; message: string }> {
   try {
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
+    const response = await fetch(PROXY_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -18,11 +18,11 @@ export async function submitToGoogleSheets(data: FormData): Promise<{ success: b
       body: JSON.stringify(data),
     });
 
-    const text = await response.text();
-    if (text.trim().toLowerCase().includes('success')) {
+    const result = await response.json();
+    if (result.success || (typeof result === 'string' && result.toLowerCase().includes('success'))) {
       return { success: true, message: 'Form submitted and saved to Google Sheet.' };
     } else {
-      return { success: false, message: text };
+      return { success: false, message: result.message || JSON.stringify(result) };
     }
   } catch (error) {
     return {
