@@ -24,7 +24,7 @@ import { FeatureSteps } from "@/components/ui/feature-section";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { submitToGoogleSheets, submitToConsole, FormData } from "@/lib/form-handler";
+// Removed unused imports related to Google Sheets
 
 // Animation hook for fade-in/slide-up on scroll
 function useScrollFadeIn() {
@@ -84,39 +84,37 @@ export default function NikooHomesLanding() {
     setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
+  const GOOGLE_FORM_URL = "https://script.google.com/macros/s/AKfycbzDzgT17QH3S-Cbii2TgRxAUl0t1Gtws6ffQ3ooUHMAEJhaNTsyA83P3vJDKDsEM8Ih/exec";
+
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    // Build form-encoded body
+    const body = Array.from(formData.entries())
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value as string)}`)
+      .join('&');
+
     try {
-      const formDataToSubmit: FormData = {
-        formType: modalType,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-      };
-
-      // Always use Google Sheets for form submissions
-      const result = await submitToGoogleSheets(formDataToSubmit);
-
-      if (result.success) {
-        // Show thank you popup instead of alert
-        const messages = {
-          download: 'Thank you! Your brochure download request has been submitted successfully. We\'ll send you the brochure shortly.',
-          explore: 'Thank you! Your project exploration request has been submitted successfully. Our team will contact you soon.',
-          sitevisit: 'Thank you! Your site visit request has been submitted successfully. We\'ll schedule your visit and contact you shortly.',
-          whatsapp: 'Thank you! Your location request has been submitted successfully. We\'ll send you the location details on WhatsApp.',
-        };
-        setThankYouMessage(messages[modalType] || 'Thank you! Your request has been submitted successfully.');
+      const response = await fetch(GOOGLE_FORM_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      const text = await response.text();
+      if (text.toLowerCase().includes("success")) {
+        setThankYouMessage("Thank you! Your submission was successful.");
         setShowThankYou(true);
         setShowModal(false);
         setFormData({ name: '', email: '', phone: '' });
       } else {
-        alert('Error: ' + result.message);
+        alert("Error: " + text);
       }
     } catch (error) {
-      console.error('Form submission error:', error);
-      alert('An error occurred. Please try again.');
+      alert("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -237,7 +235,7 @@ export default function NikooHomesLanding() {
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="Phone Number"
+                    placeholder="Your Phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
@@ -292,7 +290,7 @@ export default function NikooHomesLanding() {
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="Phone Number"
+                    placeholder="Your Phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
@@ -347,7 +345,7 @@ export default function NikooHomesLanding() {
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="Phone Number"
+                    placeholder="Your Phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
@@ -393,7 +391,7 @@ export default function NikooHomesLanding() {
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="WhatsApp Number"
+                    placeholder="Your Phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
@@ -962,31 +960,35 @@ function EnquiryForm({ onSuccess }: { onSuccess: (message: string) => void }) {
     setEnqData({ ...enqData, [e.target.name]: e.target.value });
   };
 
+  const GOOGLE_FORM_URL = "https://script.google.com/macros/s/AKfycbzDzgT17QH3S-Cbii2TgRxAUl0t1Gtws6ffQ3ooUHMAEJhaNTsyA83P3vJDKDsEM8Ih/exec";
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    // Build form-encoded body
+    const body = Array.from(formData.entries())
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value as string)}`)
+      .join('&');
+
     try {
-      const formDataToSubmit: FormData = {
-        formType: 'enquiry',
-        name: enqData.name,
-        email: enqData.email,
-        phone: enqData.phone,
-      };
-
-      // Always use Google Sheets for form submissions
-      const result = await submitToGoogleSheets(formDataToSubmit);
-
-      if (result.success) {
-        // Show thank you popup for enquiry form
+      const response = await fetch(GOOGLE_FORM_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      const text = await response.text();
+      if (text.toLowerCase().includes("success")) {
         onSuccess('Thank you! Your enquiry has been submitted successfully. Our team will contact you soon.');
         setEnqData({ name: '', email: '', phone: '' });
       } else {
-        alert('Error: ' + result.message);
+        alert("Error: " + text);
       }
     } catch (error) {
-      console.error('Form submission error:', error);
-      alert('An error occurred. Please try again.');
+      alert("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
